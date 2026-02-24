@@ -6,6 +6,7 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
 import { proxy } from "hono/proxy"
+import path from "path"
 import { basicAuth } from "hono/basic-auth"
 import z from "zod"
 import { Provider } from "../provider/provider"
@@ -541,20 +542,39 @@ export namespace Server {
           },
         )
         .all("/*", async (c) => {
-          const path = c.req.path
+          const distDir = path.resolve(import.meta.dirname, "../../../app/dist")
+          const reqPath = c.req.path === "/" ? "/index.html" : c.req.path
+          const filePath = path.join(distDir, reqPath)
 
-          const response = await proxy(`https://app.opencode.ai${path}`, {
-            ...c.req,
-            headers: {
-              ...c.req.raw.headers,
-              host: "app.opencode.ai",
-            },
+          // Prevent path traversal
+          if (!filePath.startsWith(distDir)) {
+            return c.notFound()
+          }
+
+          const mimeTypes: Record<string, string> = {
+            ".html": "text/html",
+            ".js": "text/javascript",
+            ".css": "text/css",
+            ".json": "application/json",
+            ".svg": "image/svg+xml",
+            ".png": "image/png",
+            ".ico": "image/x-icon",
+            ".woff": "font/woff",
+            ".woff2": "font/woff2",
+            ".wasm": "application/wasm",
+          }
+
+          const file = Bun.file(filePath)
+          if (await file.exists()) {
+            const ext = path.extname(filePath)
+            const contentType = mimeTypes[ext]
+            return new Response(file, contentType ? { headers: { "Content-Type": contentType } } : undefined)
+          }
+
+          // SPA fallback: serve index.html for client-side routes
+          return new Response(Bun.file(path.join(distDir, "index.html")), {
+            headers: { "Content-Type": "text/html" },
           })
-          response.headers.set(
-            "Content-Security-Policy",
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' data:; connect-src 'self' data:",
-          )
-          return response
         }) as unknown as Hono,
   )
 

@@ -4,8 +4,6 @@ import { Button } from "@opencode-ai/ui/button"
 import { ContextMenu } from "@opencode-ai/ui/context-menu"
 import { HoverCard } from "@opencode-ai/ui/hover-card"
 import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { createSortable } from "@thisbeyond/solid-dnd"
 import { type LocalProject } from "@/context/layout"
 import { useGlobalSync } from "@/context/global-sync"
@@ -147,14 +145,6 @@ const ProjectTile = (props: {
           >
             <ContextMenu.ItemLabel>{props.language.t("sidebar.project.clearNotifications")}</ContextMenu.ItemLabel>
           </ContextMenu.Item>
-          <ContextMenu.Separator />
-          <ContextMenu.Item
-            data-action="project-close-menu"
-            data-project={base64Encode(props.project.worktree)}
-            onSelect={() => props.closeProject(props.project.worktree)}
-          >
-            <ContextMenu.ItemLabel>{props.language.t("common.close")}</ContextMenu.ItemLabel>
-          </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu>
@@ -179,21 +169,6 @@ const ProjectPreviewPanel = (props: {
   <div class="-m-3 p-2 flex flex-col w-72">
     <div class="px-4 pt-2 pb-1 flex items-center gap-2">
       <div class="text-14-medium text-text-strong truncate grow">{displayName(props.project)}</div>
-      <Tooltip value={props.language.t("common.close")} placement="top" gutter={6}>
-        <IconButton
-          icon="circle-x"
-          variant="ghost"
-          class="shrink-0"
-          data-action="project-close-hover"
-          data-project={base64Encode(props.project.worktree)}
-          aria-label={props.language.t("common.close")}
-          onClick={(event) => {
-            event.stopPropagation()
-            props.setOpen(false)
-            props.ctx.closeProject(props.project.worktree)
-          }}
-        />
-      </Tooltip>
     </div>
     <div class="px-4 pb-2 text-12-medium text-text-weak">{props.language.t("sidebar.project.recentSessions")}</div>
     <div class="px-2 pb-2 flex flex-col gap-2">
